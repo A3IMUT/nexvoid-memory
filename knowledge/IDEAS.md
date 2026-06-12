@@ -100,3 +100,39 @@ Next Steps:
 - Протестировать прототип на реальных данных
 - Доработать на основе обратной связи
 
+
+
+---
+
+## Idea
+
+Title: Создание агента Signal Watcher
+
+Description:
+Агент для ежедневного мониторинга OpenRouter, Hugging Face, GitHub Trending, Product Hunt и Reddit AI. Собирает новые модели, инструменты, MCP-серверы, AI-стартапы и workflow. Результаты сохраняются в signal_watcher.md.
+
+Value:
+Позволяет Nexvoid оперативно обнаруживать новые тенденции и решения в AI-пространстве, ускоряя внедрение инноваций.
+
+Links:
+https://openrouter.ai/models
+https://huggingface.co/models
+https://github.com/trending
+https://www.producthunt.com/
+https://www.reddit.com/r/artificial/
+
+Files:
+signal_watcher.md
+
+Source:
+Telegram
+
+Next Steps:
+- Разработать скрипт парсинга для каждого источника
+- Настроить расписание ежедневного запуска агента
+- Реализовать логирование ошибок и сбоев
+- Протестировать сбор данных на примере недели
+- Добавить фильтрацию дубликатов и низкокачественного контента
+
+Date: 2026-06-12
+
