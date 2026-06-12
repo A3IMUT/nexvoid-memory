@@ -38,3 +38,13 @@ Date: 2026-06-12
 Запомни идею:
 
 Каждый агент должен быть отдельным workflow.
+
+
+## Idea
+Date: 2026-06-12
+
+Запомни идею:
+
+https://github.com/modelcontextprotocol
+
+Изучить MCP и встроить поддержку MCP-серверов в Nexvoid Commander.
