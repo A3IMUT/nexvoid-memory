@@ -61,3 +61,16 @@ Date: 2026-06-12
 
 Ссылка:
 https://n8n.io
+
+
+## Idea
+Date: 2026-06-12
+
+Запомни идею:
+
+Сделать отдельный Workflow Hunter.
+
+Файл: workflow_hunter_v1.md
+
+Ссылка:
+https://n8n.io
