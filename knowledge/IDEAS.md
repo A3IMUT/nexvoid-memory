@@ -173,3 +173,36 @@ Next Steps:
 
 Date: 2026-06-12
 
+
+
+---
+
+## Idea
+
+Title:
+Workflow Hunter для n8n
+
+Description:
+Создание отдельного workflow hunter для проекта Nexvoid. Документация в файле workflow_hunter_v1.md. Интеграция с n8n через предоставленную документацию.
+
+Value:
+Позволит автоматизировать поиск и создание новых workflow в n8n, ускорив разработку и тестирование автоматизаций для Nexvoid.
+
+Links:
+https://n8n.io
+
+Files:
+workflow_hunter_v1.md
+
+Source:
+Telegram
+
+Next Steps:
+- Добавить детали реализации в workflow_hunter_v1.md
+- Протестировать workflow hunter на тестовых сценариях
+- Интегрировать с текущей системой автоматизации
+- Провести ревью кода с командой
+- Добавить документацию по использованию
+
+Date: 2026-06-12
+
