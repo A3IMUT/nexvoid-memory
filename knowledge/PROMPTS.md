@@ -1,1 +1,3 @@
-PROMPTS.md
+# Nexvoid Prompts
+
+Каталог системных промптов и агентов.
