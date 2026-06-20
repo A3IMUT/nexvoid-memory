@@ -268,5 +268,39 @@ Status:
 ACTIVE
 
 ---
+## D-013 — Memory Record Schema v1
 
+Date: 2026-06
+
+Decision:
+Вводится формальная схема записи для `knowledge/IDEAS.md`, отдельная от решения о действиях Memory Service API (save_idea, search_ideas, get_recent_ideas, memory_stats).
+
+Обязательные поля: `Date`, `Title`, `Description`.
+
+Расширенные поля v1.0: `ID`, `Source`, `Type`, `Status`.
+
+Полное описание схемы зафиксировано в `knowledge/MEMORY_SCHEMA.md` (классификация CORE).
+
+Действие `save_idea` в `Nexvoid_Memory_Service` реализовано в соответствии с этой схемой (ранее являлось заглушкой и не выполняло реальной записи).
+
+GitHub Personal Access Token перенесён из открытых параметров HTTP-нод в n8n Credentials (`GitHub PAT`, httpHeaderAuth).
+
+Reason:
+Действия API определяют, что можно сделать с памятью, но не определяют формат самих записей. По мере подключения новых агентов (Signal Watcher, Market Oracle, Content Synthesist и др.) к Memory Service возникает риск, что каждый агент будет писать в IDEAS.md в своём собственном формате, что сломает парсинг для существующих read-действий.
+
+Схема вводится как версионируемый контракт (additive-only для минорных версий) до подключения новых писателей — это предотвращает переделку парсинга постфактум.
+
+Хранение токена доступа в открытом виде в параметрах workflow было риском безопасности независимо от схемы данных; перенос в Credentials устраняет этот риск без изменения функциональности.
+
+Impact:
+Любой агент или workflow, пишущий в `knowledge/IDEAS.md`, должен соответствовать `MEMORY_SCHEMA.md` v1.0.
+
+Прямые записи в IDEAS.md, минующие `Nexvoid_Memory_Service.save_idea`, не рекомендуются.
+
+Изменение состава полей (переименование, удаление) требует новой записи в DECISIONS.md и version bump схемы до 2.0.
+
+Status:
+ACTIVE
+
+---
 END OF DOCUMENT
