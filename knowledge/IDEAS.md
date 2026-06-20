@@ -27,4 +27,31 @@ Next Steps:
 
 ---
 
+Date: 2026-06-20
+ID: idea-20260620-160000
+Source: MiMoCode
+Type: idea
+Status: new
+Title: Nexvoid Knowledge Sync — авто-синхронизация памяти GitHub с реальным состоянием n8n
+
+Description: Создать воркфлоу Nexvoid_Knowledge_Sync, который раз в сутки автоматически читает список всех воркфлоу через n8n API, сравнивает с текущим состоянием knowledge/WORKFLOWS.md и knowledge/DECISIONS.md, и отправляет в Telegram отчёт о расхождениях: новые воркфлоу, удалённые, изменённые статусы (active/inactive). Это решает проблему documentation drift — когда документация отстаёт от реального состояния системы. Воркфлоу использует Cron Trigger → n8n API (workflow_list) → Code node (diff-логика) → Telegram notification. Бонус: автоматически обновляет поле 'Status' в WORKFLOWS.md через GitHub API, если обнаружены несоответствия.
+
+Value: Исчезает необходимость вручную сверять документацию с реальностью. Digital Guardian получает автоматического помощника. Снижается риск принятия решений на основе устаревших данных. Решает D-005 (безопасность) и D-006 (классификация) — система сама следит за актуальностью классификации воркфлоу.
+
+Links: knowledge/WORKFLOWS.md, knowledge/DECISIONS.md, skills/06_NEXVOID_ARCHITECTURE.md
+
+Files: knowledge/WORKFLOWS.md, knowledge/DECISIONS.md
+
+Source: MiMoCode
+
+Next Steps:
+- Определить формат diff-отчёта (новые/удалённые/изменённые воркфлоу)
+- Спроектировать Code node для сравнения workflow_list с WORKFLOWS.md
+- Реализовать Telegram-уведомление с форматированным отчётом
+- Добавить автоматическое обновление WORKFLOWS.md через GitHub API
+- Протестировать на текущем состоянии n8n (36 воркфлоу)
+- Классифицировать как CORE и защитить от удаления
+
+---
+
 Ideas
