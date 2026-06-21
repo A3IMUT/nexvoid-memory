@@ -55,3 +55,11 @@ Next Steps:
 ---
 
 Ideas
+Date: 2026-06-21
+ID: idea-20260621-094056
+Source: Commander
+Type: idea
+Status: new
+Title: [TEST] Bearer prefix fix check
+Description: Проверяет исравление Bearer-префикса в GitHub PAT credential.
+---
