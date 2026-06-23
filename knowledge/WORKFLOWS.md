@@ -1,3 +1,24 @@
+## Update — 2026-06-23
+
+Classification: CORE
+
+Workflow: Nexvoid_Memory_Service (id BmlFZkYzamGDvgoB)
+
+Changes:
+
+- Added `get_file` action — reads any file in the repo by path via the existing GitHub PAT credential. Returns content (decoded from base64) plus the file's sha.
+- Added `update_file` action — writes/updates any file in the repo. Supports two modes: `replace` (overwrites the file) and `prepend` (inserts new content before the existing body, same pattern as `save_idea`). Uses GET-sha then PUT-content, consistent with the existing GitHub commit flow.
+- Existing actions (`save_idea`, `search_ideas`, `get_recent_ideas`, `memory_stats`) were not modified — only new branches were added to the Action Router (switch), preserving backward compatibility.
+- Credentials for the new HTTP nodes (Fetch File from GitHub, Fetch File for Update, Commit File Update) required manual binding to the existing `GitHub PAT` credential in the n8n UI — the workflow-code update path did not auto-assign them.
+
+Result:
+
+Nexvoid_Memory_Service is now the single entry point for both reading and writing any file in the `A3IMUT/nexvoid-memory` repository, not just `IDEAS.md`. This is the foundation for Claude (and future agents) to update project documentation (DECISIONS.md, CHANGELOG.md, WORKFLOWS.md, skills files) directly, without manual copy-paste between sessions.
+
+Verified via live test calls against the real GitHub repo (not just pinned/synthetic test data).
+
+---
+
 # Nexvoid Workflows
 
 Каталог проверенных workflow.
