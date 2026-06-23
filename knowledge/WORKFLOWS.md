@@ -1,3 +1,29 @@
+## Session Update — 2026-06-23
+
+Classification: CORE
+
+Workflow: Nexvoid_Memory_Service (id BmlFZkYzamGDvgoB)
+
+What was done today:
+
+- Extended Nexvoid_Memory_Service with two new actions, routed through the existing Action Router (switch) without touching the four existing branches (save_idea, search_ideas, get_recent_ideas, memory_stats):
+  - `get_file` — reads any file in the A3IMUT/nexvoid-memory repo by path, returns decoded content + sha.
+  - `update_file` — writes/updates any file in the repo. Two modes: `replace` (full overwrite) and `prepend` (insert before existing content, same GET-sha/PUT-content pattern as save_idea). Requires path + content; mode defaults to replace.
+- Validated the new branches with `validate_workflow` and `test_workflow` (synthetic pin data) before touching production.
+- Found that `update_workflow` does not auto-assign credentials to newly added HTTP Request nodes, even when `newCredential('GitHub PAT')` is specified in the SDK code. The three new nodes (Fetch File from GitHub, Fetch File for Update, Commit File Update) required manual credential binding in the n8n UI.
+- Verified both new actions against the real GitHub repo (not just pinned data) via a temporary webhook trigger added alongside the existing executeWorkflowTrigger, used only for this live test.
+
+Result:
+
+Nexvoid_Memory_Service is now the single entry point for reading and writing any file in the project knowledge repository, not just IDEAS.md. This is the foundation for Claude (and future agents — Signal Watcher, Market Oracle, etc.) to update DECISIONS.md, CHANGELOG.md, WORKFLOWS.md, and skills files directly on the "шаг выполнен, обнови файлы проекта" command, without manual copy-paste between sessions.
+
+Next steps (not done yet):
+
+- Remove the temporary webhook trigger added for live testing (TEMP Webhook Test Trigger + Normalize Webhook Input nodes) once no longer needed for verification.
+- IDEAS.md logic still needs a separate redesign pass (currently used as general memory instead of pure ideas) — deferred per explicit decision.
+
+---
+
 ## Update — 2026-06-23
 
 Classification: CORE
