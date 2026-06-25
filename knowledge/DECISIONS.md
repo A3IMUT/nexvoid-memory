@@ -1,3 +1,43 @@
+## D-015 — Task Registry (async pattern) в Nexvoid_Memory_Service
+
+Date: 2026-06-25
+
+Decision:
+Добавлены действия `create_task` и `update_task_status` в `Nexvoid_Memory_Service`. Postgres подключён к n8n впервые (credential `Nexvoid Postgres`, контейнер `nexvoid-postgres`, БД `nexvoid_db`), создана таблица `tasks` (текущий статус, без журнала истории — осознанное упрощение).
+
+Архитектура: Commander остаётся единственной точкой контакта с пользователем. Агенты/сервисы не пишут в Telegram напрямую — пишут статус/результат в `tasks` через `update_task_status`, затем делают callback в Commander (`notify_user`, пока не реализован — следующий шаг).
+
+Reason:
+Нужен паттерн "принято -> передано агенту -> выполнено" с асинхронной обработкой без блокировки. Файлы (GitHub) не годятся для часто обновляемого статуса — sha-перезапись создаёт race condition; Postgres уже был в инфраструктуре, просто не подключён к n8n.
+
+Impact:
+Полная схема и SQL — в knowledge/TASK_REGISTRY.md (CORE).
+
+Status:
+ACTIVE
+
+---
+
+## D-016 — Внешний проект "Городские мастера" на общем VPS
+
+Date: 2026-06-25
+
+Decision:
+На той же VPS, где работает Nexvoid, развёрнут полностью изолированный внешний проект "Городские мастера" (Flutter-маркетплейс, package ID ru.gormaster.app). Это НЕ часть экосистемы Nexvoid.
+
+Изоляция: отдельная Docker-сеть gormaster-net, отдельная БД gormaster-db (Postgres 16, база gormaster_prod, юзер gormaster_admin), отдельный n8n gormaster-n8n (внутренний порт 5678, хостовый 5680, не публикуется напрямую). Домены: n8n.gormaster.nexvoid.ru (UI, owner-аккаунт создан) и api.gormaster.nexvoid.ru (единый /v1 gateway, action в body, rewrite на /webhook/gormaster-api, всё остальное — 404). Секреты — через POSTGRES_PASSWORD_FILE / N8N_ENCRYPTION_KEY_FILE (не -e, чтобы не светиться в docker inspect).
+
+Reason:
+Основатель ведёт два проекта параллельно на одной VPS. Полная инфраструктурная изоляция (сеть, БД, n8n, домены) предотвращает повторение путаницы, уже случившейся внутри Nexvoid (Nexvoid_Commander vs Nexvoid Commander_html — два воркфлоу с похожим именем и разной логикой).
+
+Impact:
+Полное описание инфраструктуры — в knowledge/EXTERNAL_PROJECTS.md. Контейнеры/сети/credentials с префиксом gormaster- никогда не пересекаются с nexvoid-*/n8n-tunneling/client-1-n8n-app. NEXVOID_CONSTITUTION_V2 §9 (Observer mode) применяется к агенту, работающему на VPS, в том же духе, что и к MCP-агентам внутри Nexvoid.
+
+Status:
+ACTIVE
+
+---
+
 DECISIONS.md
 # Nexvoid Decisions Log
 
