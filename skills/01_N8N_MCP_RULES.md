@@ -1,79 +1,124 @@
-# N8N MCP OPERATING RULES
+# 01_N8N_MCP_RULES
 
-When connected to n8n through MCP:
+Classification: CORE
+Last Updated: 2026-06-28
 
-Mandatory sequence:
-
-1. workflow_list
-2. workflow_get
-3. analysis
-4. proposal
-5. approval
-6. execution
-
-Never:
-
-- delete workflows automatically
-- overwrite workflows blindly
-- activate workflows automatically
-- modify credentials
-
-Always provide:
-
-- workflow id
-- workflow name
-- purpose
-- affected nodes
-- risk level
-
-Before changing a workflow:
-
-Generate:
-
-CHANGE SUMMARY
-EXPECTED EFFECT
-ROLLBACK PLAN
-
-Preferred mode:
-
-READ ONLY
-
-Write operations require explicit user approval.
+Rules and lessons for working with n8n via MCP SDK. Read this BEFORE starting any workflow engineering session.
 
 ---
 
-# WORKFLOW SDK — PRACTICAL LESSONS (2026-06-23)
+## RULE 1: Read Before Write
 
-Learned while extending Nexvoid_Memory_Service with get_file/update_file actions.
+Before modifying any workflow: get_workflow_details first. Never reconstruct from memory — the live n8n state is ground truth.
 
-## Switch node branching
+Before touching any knowledge file: get_file first to check current content and sha.
 
-In generated SDK code, `.onCase()` for a switch node takes a **numeric output index**, not the string `outputKey` used inside the rule definition. The `outputKey` strings are display/UI metadata only.
+---
 
-```
-// WRONG — fails with "Method 'onCase' is not allowed" or silent parse failure
-.onCase('get_file', someBranch)
+## RULE 2: Workflow Classification
 
-// RIGHT
-.onCase(4, someBranch)  // index matches position in rules.values[]
-```
+Always identify classification before acting:
+- CORE: Nexvoid_Commander, Nexvoid_Memory_Service — require D-014 checklist before any change
+- TEST_: temporary workflows — prefix TEST_, delete after use
+- EXPERIMENTAL: prototypes — no checklist needed but document what changed
 
-There is no `.onDefault()` for switch — the fallback branch is just another numeric `.onCase(N, ...)`, where N is the index after all defined rules (matches `renameFallbackOutput` conceptually, but is wired by position).
+---
 
-## Every node needs an `output` sample
+## RULE 3: D-014 Checklist for CORE/PRODUCTION
 
-`validate_workflow` / `update_workflow` will fail with the opaque error `Cannot convert undefined or null to object` if **any** node in the graph is missing an `output: [...]` sample array — including Set, Code, Switch, and trigger nodes, not just HTTP Request nodes. Add a realistic one-item sample to every node definition before validating. This error gives no indication of *which* node is missing it — if it appears, audit the whole file for missing `output:` fields first, before suspecting routing/syntax issues.
+Before any update_workflow or create_workflow_from_code touching CORE/PRODUCTION:
+1. Name the workflow and its classification
+2. Describe what changes and why
+3. Name the risk (what breaks if it goes wrong)
+4. Get explicit operator confirmation
+5. Only then execute
 
-## Credentials are not auto-bound to new HTTP nodes
+Read-only actions (get_workflow_details, search_workflows, get_execution) — no checklist needed.
 
-Adding `credentials: { httpHeaderAuth: newCredential('GitHub PAT') }` to a new HTTP Request node in SDK code, then calling `update_workflow`, does **not** reliably bind the credential — the tool reports the node as "skipped during credential auto-assignment" and the node's live JSON has no `credentials` key. Real executions then fail with `Credentials not found`.
+---
 
-Workaround that is confirmed to work: bind the credential manually in the n8n UI (open node → Credential to connect with → select existing credential → save). After manual binding, the node's JSON shows `credentials: { httpHeaderAuth: { id, name } }` and live calls succeed. Do not assume `newCredential()` in code is sufficient for nodes added via `update_workflow` — verify with a real (non-pinned) execution before relying on a new HTTP node.
+## LESSON: switchCase requires numeric onCase indexes (2026-06-23)
 
-## Testing reality check
+Named outputKey strings in switchCase rules combined with .onCase('string', ...) crash the validator with "Cannot convert undefined or null to object".
 
-`test_workflow` with pin data **always** pins HTTP Request nodes to synthetic data — it cannot validate real external calls or real credential bindings, no matter how realistic the pin data looks. A workflow that passes `test_workflow` can still fail in production with `Credentials not found` or similar. To confirm a new HTTP-calling branch actually works, run a real `execute_workflow` (e.g. via a temporary webhook trigger if the workflow has no other directly-executable trigger) and inspect the actual execution result — don't stop at a clean `test_workflow` pass.
+WORKING PATTERN:
+- Omit outputKey from rules.values entries
+- Use numeric .onCase(0, ...), .onCase(1, ...) etc
+- Use .add(router.output(N).to(fallbackNode)) for fallback where N = number of cases
+- Use switchCase version 3.2 (not 3.4)
 
-## Incremental extension pattern that worked
+BROKEN (do not use):
+- { outputKey: 'save_idea', conditions: {...} } with .onCase('save_idea', ...)
+- .onDefault(node) — security violation, not an allowed SDK method
 
-For a workflow whose action set grows over time (more actions added later), keep each action as a self-contained branch off one switch node: one validation/code node + the actual HTTP call(s) + one formatting node, wired only into its own `.onCase(N, ...)`. This made it possible to add `get_file` and then `update_file` without touching the four pre-existing branches (`save_idea`, `search_ideas`, `get_recent_ideas`, `memory_stats`) at all — each addition was reviewed and tested in isolation.
+---
+
+## LESSON: Every node requires output: [...] sample data (2026-06-23)
+
+Omitting output from any node() or trigger() call causes: "Cannot convert undefined or null to object"
+
+REQUIRED pattern:
+const myNode = node({ type: ..., config: {...}, output: [{ field: 'sample_value' }] });
+
+Output sample does not need to be exhaustive — one representative object is enough.
+
+---
+
+## LESSON: HTTP Request credentials never auto-bind (2026-06-23, confirmed 2026-06-28)
+
+update_workflow and create_workflow_from_code do NOT preserve credential bindings on HTTP Request nodes. The SDK returns "HTTP Request nodes were skipped during credential auto-assignment" every time.
+
+This is a permanent architectural constraint (see D-017), not a bug to be fixed.
+
+REQUIRED PROCESS after any update that adds/changes HTTP Request nodes:
+1. Open n8n UI: n8n.nexvoid.ru
+2. Navigate to the updated workflow
+3. Click each HTTP Request node manually
+4. Assign the correct credential (GitHub PAT → httpHeaderAuth)
+5. Save
+
+Memory Service (BmlFZkYzamGDvgoB) HTTP nodes requiring GitHub PAT after each update:
+Get IDEAS.md (for save), Commit Idea to GitHub, Get IDEAS.md (search), Get IDEAS.md (recent), Get IDEAS.md (stats), Fetch File from GitHub, Fetch File for Update, Commit File Update, Fetch File for Delete, Commit File Delete, Commit File Create
+
+DO NOT publish/activate the new workflow version before re-binding credentials — GitHub API calls will fail with 401.
+
+---
+
+## LESSON: update_file cannot create new files (2026-06-28)
+
+update_file action in Memory Service does a GET first (to obtain sha) then PUT with sha. If the file does not exist, GET returns 404 and the action fails.
+
+For new files: use create_file action (GitHub PUT without sha field).
+For existing files: use update_file action (mode: replace or prepend).
+
+Memory Service actions summary:
+- create_file: creates a new file (fails with 422 if file already exists — safe, not destructive)
+- update_file: updates existing file (fails with 404 if file does not exist)
+- delete_file: deletes existing file (fails with 404 if file does not exist)
+- get_file: reads existing file (fails with 404 if file does not exist — triggers error workflow!)
+
+---
+
+## LESSON: get_file 404 triggers error workflow and sends Telegram notification (2026-06-28)
+
+Memory Service has an errorWorkflow configured (Lg0k2vNyErqKSWTl). Any failed execution — including benign 404s from probing non-existent paths — triggers this workflow and sends a Telegram error notification to the operator.
+
+CONSEQUENCE: never use get_file to check if a file exists by trying the path and expecting 404. Use the GitHub Git Trees API (GET /repos/{owner}/{repo}/git/trees/main?recursive=1) via a separate TEST_ workflow with manually-bound credentials to get the full file tree first.
+
+---
+
+## LESSON: get_file on directory path returns wrong data (2026-06-28)
+
+Passing a directory path (e.g. "knowledge" without a filename) to get_file does not return a directory listing. The GitHub Contents API returns an array for directories, and the Format get_file Result node cannot handle arrays — it may return stale data or silently fail. Always use exact file paths with extensions.
+
+---
+
+## LESSON: Memory Service activeVersionId vs versionId lag (2026-06-28)
+
+After update_workflow, n8n shows active: true on the workflow but activeVersionId still points to the old version. The new version is a draft — it will not execute in production until manually published in the n8n UI (open workflow → click Publish/Save as active version).
+
+Always verify after credential re-binding: open the workflow in UI and confirm the version is published, not just saved as draft.
+
+---
+
+END OF DOCUMENT
